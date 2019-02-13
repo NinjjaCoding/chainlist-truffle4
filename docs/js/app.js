@@ -52,60 +52,60 @@ App = {
   },
 
   reloadArticles: function() {
-    //to avoid too many calls to our reloadArticles function
-    if(app.loading) { //if we are already loading articles we exit the function
+    // avoid reentry
+    if(App.loading) {
       return;
     }
     App.loading = true;
 
     // refresh account information because the balance might have changed
-    App.displayAccountInfo(); //retreive the id for articles for sale
+    App.displayAccountInfo();
 
-    var ChainListInstance;
+    var chainListInstance;
 
     App.contracts.ChainList.deployed().then(function(instance) {
-      ChainListInstance = instance;
-      return ChainListInstance.getArtclesForSale();
+      chainListInstance = instance;
+      return chainListInstance.getArticlesForSale();
     }).then(function(articleIds) {
-      //retreive the article placeholder and clear it
-      $('#articelsRow').empty();
+      // retrieve the article placeholder and clear it
+      $('#articlesRow').empty();
 
       for(var i = 0; i < articleIds.length; i++) {
         var articleId = articleIds[i];
-        ChainListInstance.articles(articleId.toNumber()).then(funciton(article){
-          App.displayArticle(article[o], article[1], article[3], article[4], article[5]);
+        chainListInstance.articles(articleId.toNumber()).then(function(article){
+          App.displayArticle(article[0], article[1], article[3], article[4], article[5]);
         });
       }
-        app.loading = false;
+      App.loading = false;
     }).catch(function(err) {
       console.error(err.message);
       App.loading = false;
     });
   },
-        // to displayArticles we have for sale
-  displayArticle: function(id, sellet, name, description, price) {
-    var articelRow = $('#articleRow'); //its a jquary from article Row id number
 
-    var etherPrice = web3.fromWei(price, "ether"); //we get its price in ether
-      //then we get the variable from the article tempalte
-    var articleTemplate = $('#articleTemplate'); //we j quary article template to get:
-    articleTemplate.find('.panel-title').text(name); //title of item in text
-    articleTemplate.find('.article-description').text(description); //description in text
-    articleTemplate.find('article-price').text(etherPrice, + "ETH"); //price in ether
-    articleTemplate.find('.btn-buy').attr('data-id, id'); //here we attached to the metadat to thes two buttons
-    articleTemplate.find('.btn-buy').attr('data-vaue', etherPrice);//so it is retreived when clicked
+  displayArticle: function(id, seller, name, description, price) {
+    var articlesRow = $('#articlesRow');
 
-     //seller
-     if (seller == App.account) { //if the seller is lookig at the article
-       articleTemplate.find('.ariticle-sellet').text("you");
-       articleTemplate.find('.btn-buy').hide(); //hide the buy button if the seller
-     } else {
-       articleTemplate.find('.article-seller').text(seller); //text the seller address
-       articleTemplate.find('.btn-buy').show(); //and show the buy button
-     }
+    var etherPrice = web3.fromWei(price, "ether");
 
-     // add this new articles
-     articlesRow.append(articleTemplate.html());
+    var articleTemplate = $("#articleTemplate");
+    articleTemplate.find('.panel-title').text(name);
+    articleTemplate.find('.article-description').text(description);
+    articleTemplate.find('.article-price').text(etherPrice + " ETH");
+    articleTemplate.find('.btn-buy').attr('data-id', id);
+    articleTemplate.find('.btn-buy').attr('data-value', etherPrice);
+
+    // seller
+    if (seller == App.account) {
+      articleTemplate.find('.article-seller').text("You");
+      articleTemplate.find('.btn-buy').hide();
+    } else {
+      articleTemplate.find('.article-seller').text(seller);
+      articleTemplate.find('.btn-buy').show();
+    }
+
+    // add this new article
+    articlesRow.append(articleTemplate.html());
   },
 
   sellArticle: function() {
@@ -157,7 +157,7 @@ App = {
   buyArticle: function() {
     event.preventDefault();
 
-    //retreive the article
+    // retrieve the article
     var _articleId = $(event.target).data('id');
     var _price = parseFloat($(event.target).data('value'));
 
